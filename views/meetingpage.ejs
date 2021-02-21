@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HOME</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.1/peerjs.min.js.map"></script>
+    <script src="/js/mediasoup-client.js"></script>
+    <script src="/js/socket.io.js"></script>
+
+    <script>
+        const roomId = "<%= roomId %>";
+        const myName = "Rampravesh Yadav"
+    </script>
+</head>
+
+<body>
+
+    <div class="container-fluid px-0">
+        <div class="row">
+            <div class="col">
+                <div class="row">
+                    <div class="col border-0 position-relative" id="video-grid">
+                        <div class="toast-container position-absolute bottom-0 end-0">
+                            <!--User connected-->
+                            <div class="toast" role="alert" id="welcome" aria-live="assertive" aria-atomic="true">
+                                <div class="toast-body">
+
+                                </div>
+                            </div>
+
+                            <div class="toast" role="alert" id="connected" aria-live="assertive" aria-atomic="true">
+                                <div class="toast-body">
+
+                                </div>
+                            </div>
+
+                            <div class="toast" role="alert" id="disconnected" aria-live="assertive" aria-atomic="true">
+                                <div class="toast-body">
+
+                                </div>
+                            </div>
+
+                            <div class="toast" id="locked" role="alert" aria-live="assertive" aria-atomic="true">
+                                <div class="toast-body">
+
+                                </div>
+                            </div>
+                            <div class="toast" id="error" role="alert" aria-live="assertive" aria-atomic="true">
+                                <div class="toast-body">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col"></div>
+                    <div class="col"></div>
+                </div>
+            </div>
+            <div class="col-3 d-none g-0" id="sidebar">
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="home-tab" data-bs-toggle="tab" data-bs-target="#chat_window" type="button" role="tab" aria-controls="home" aria-selected="true">Chat</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#participants_window" type="button" role="tab" aria-controls="profile" aria-selected="false">Participants</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#file_window" type="button" role="tab" aria-controls="contact" aria-selected="false">Files</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade" id="chat_window" role="tabpanel" aria-labelledby="chat">
+                        <div class="main__chat__window" id="main__chat__window">
+                            <ul class="messages" id="all_messages"></ul>
+                        </div>
+                        <div class="main__message_container">
+                            <input type="text" class="text-secondary" id="chat_message" placeholder="Type message here.." />
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="participants_window" role="tabpanel" aria-labelledby="participants">
+                        <div class="main__participants__window" id="main__participants__window">
+                            <ul class="messages text-primary" id="all_participants"></ul>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="file_window" role="tabpanel" aria-labelledby="participants ">
+                        <div class="main__chat__window " id="main__file__window ">
+                            <ul class="messages" id="all_files"></ul>
+                        </div>
+                        <div class="input-group mt-3 main_message_container">
+                            <input class="form-control" type="file" onchange="selectfile(event)" id="formFile">
+                            <button class="input-group-text" id="fileSubmit"><i class="fa fa-send"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-0">
+            <div class="col-12">
+                <nav class="navbar navbar-expand navbar-light bg-light">
+                    <div class="container-fluid">
+                        <ul class="navbar-nav ml-0 mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                <div class="nav-link" aria-current="page" id="muteButton" onclick="muteUnmute()">
+                                    <i class="fa fa-microphone"></i>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="nav-link text-danger" id="leave_meeting">
+                                    <i class="fa fa-phone fa-rotate-90"></i>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="nav-link" id="playPauseVideo" onclick="playStop()">
+                                    <i class="fa fa-video-camera"></i>
+                                </div>
+                            </li>
+                        </ul>
+                        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                <div class="nav-link" onclick="recording()">
+                                    <i class="fa fa-play-circle-o"></i>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="nav-link" id="screenShare" onclick="screenShare()">
+                                    <i class="fa fa-tv"></i>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="nav-link" id='participants' onclick="ShowParticipants(this)">
+                                    <i class="fa fa-users"></i>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="nav-link" id="chat__Btn" onclick="ShowChat(this)">
+                                    <i class="fa fa-comment"></i>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="nav-link" id="lockButton">
+                                    <i class="fa fa-unlock-alt"></i>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="nav-link" id="joinButton">
+                                    <i class="fa fa-plus"></i>
+                                </div>
+                            </li>
+
+
+                        </ul>
+                        <ul class="navbar-nav mr-0 mb-2 mb-lg-0">
+                            <li class="nav-item dropup">
+                                <a class="nav-link active" aria-current="page" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa fa-cog"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <a class="dropdown-item" href="/">Setting</a>
+                                    <a class="dropdown-item" href="/">Setting</a>
+                                    <a class="dropdown-item" href="/">Setting</a>
+                                    <a class="dropdown-item" href="/">Setting</a>
+                                </ul>
+                            </li>
+
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
+    <script src="/js/controls.js"></script>
+    <script src="/js/mediasoupapp.js"></script>
+    <script src="/js/room.js"></script>
+
+
+</body>
+
+</html>

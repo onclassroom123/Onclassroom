@@ -1,0 +1,41 @@
+{
+    "name": "onclassroom",
+    "version": "1.0.0",
+    "description": "",
+    "main": "server.js",
+    "scripts": {
+        "start": "nodemon server.js",
+        "build-client": "browserify node_modules/mediasoup-client/lib/index.js -s MediasoupClient -o public/js/mediasoup-client.js"
+    },
+    "keywords": [],
+    "author": "Rampravesh",
+    "license": "ISC",
+    "dependencies": {
+        "body-parser": "^1.19.0",
+        "browserify": "^17.0.0",
+        "cors": "^2.8.5",
+        "crypto": "^1.0.1",
+        "ejs": "^3.1.5",
+        "errorhandler": "^1.5.1",
+        "express": "^4.17.1",
+        "express-jwt": "^6.0.0",
+        "express-session": "^1.17.1",
+        "ffmpeg-static": "^4.2.7",
+        "fluent-ffmpeg": "^2.1.2",
+        "fs": "0.0.1-security",
+        "https": "^1.0.0",
+        "jsonwebtoken": "^8.5.1",
+        "mediasoup": "^3.6.31",
+        "mediasoup-client": "^3.6.27",
+        "mongodb": "^3.6.4",
+        "mongoose": "^5.11.15",
+        "morgan": "^1.10.0",
+        "mysql": "^2.18.1",
+        "nodemon": "^2.0.6",
+        "passport": "^0.4.1",
+        "passport-local": "^1.0.0",
+        "peer": "^0.5.3",
+        "socket.io": "^2.3.0",
+        "uuid": "^8.3.0"
+    }
+}
