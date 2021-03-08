@@ -28,6 +28,9 @@ MeetingSchema.methods.getMeetingId = function() {
 MeetingSchema.methods.getHost = function() {
     return this.host;
 };
+MeetingSchema.methods.is_host = function(id) {
+    return this.host === id;
+}
 MeetingSchema.methods.is_lock = function() {
     return this.islocked;
 };
@@ -40,3 +43,27 @@ MeetingSchema.methods.unLock = function() {
 };
 
 mongoose.model('Meetings', MeetingSchema);
+
+// exaple models
+
+const nameSchema = new Schema({
+
+});
+
+//schema method
+nameSchema.methods.functionName = function(arguments) {
+
+}
+
+//pre middleware
+nameSchema.pre('save', function() {
+
+});
+
+//post midleware
+nameSchema.post('save', function() {
+
+})
+
+//create model
+mongoose.model('ModelName', nameSchema);

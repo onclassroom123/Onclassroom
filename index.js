@@ -1,6 +1,5 @@
 const express = require("express");
 const path = require('path');
-const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const cors = require('cors');
@@ -39,13 +38,16 @@ mongoose.set('debug', true);
 require('./models/Users');
 require('./models/Meetings');
 
+//passort intitialize
 require('./config/passport');
 app.use(passport.initialize())
 app.use(passport.session())
-    // app.get('/', (req, res) => {
-    //     res.render('meetingpage', { roomId: '1324945d79384579342', user: 'Rampravesh' })
-    // })
-app.use(require('./apps/routes'));
+app.get('/', (req, res) => {
+    res.render('meetingpage', { roomId: '1324945d79384579342', user: 'Rampravesh' })
+})
+app.use(require('./routes'));
+
+
 //Error handlers & middlewares
 if (!isProduction) {
     app.use((err, req, res, next) => {
@@ -61,6 +63,5 @@ if (!isProduction) {
 }
 
 const server = require("http").Server(app);
-
 server.listen(process.env.PORT || 3030, () => console.log('Server running on http://localhost:3030/'));
 io.ioserver(server);

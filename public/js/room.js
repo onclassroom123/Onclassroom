@@ -1,7 +1,8 @@
 let localVideo;
-const remoteContainer = document.querySelector('#video-grid')
+const remoteContainer = document.querySelector('#videoid')
 const stateSpan = document.querySelector('#state_span')
-let localStream = null;
+let localAudioStream = null;
+let localVideoStream = null;
 let screenStream = null;
 let clientId = null;
 let device = null;
@@ -17,24 +18,14 @@ let videoConsumers = {};
 let audioConsumers = {};
 let messageConsumers = {};
 let fileConsumers = {};
-let members = {};
+var members = {};
 let pendingMessage = 0;
 let is_locked = false;
-let is_recording = false;
-
+let pendingNotification = [];
+let remoteVideos = {}
 
 // =========== socket.io ========== 
 let socket = null;
-
-function showToast(id, value) {
-    $(`#${id} .toast-body`).text(value);
-    console.log(value)
-    var myToast = new bootstrap.Toast(document.getElementById(id), {
-        autohide: true,
-        animation: true,
-    })
-    myToast.show();
-}
 
 // return Promise
 function connectSocket() {
@@ -52,8 +43,7 @@ function connectSocket() {
             // --- prepare room ---
             console.log('socket.io connected(). prepare room=%s', roomId);
             var data = await sendRequest('prepare_room', {
-                roomId: roomId,
-                name: myName
+                roomId: roomId
             });
             for (const key in data) {
                 addMember(key, data[key]);
@@ -62,39 +52,18 @@ function connectSocket() {
 
         socket.on('newUser', function(data) {
             addMember(data.userId, data.name);
-            showToast("connected", `${data.name} connected`)
+            pendingNotification.push(`${data.name} joined`)
+            if (pendingNotification.length === 1) {
+                showNotification();
+            }
         });
 
         socket.on('user-disconnected', function(data) {
-            removeMember(data.userId)
-            showToast("disconnected", `${data.name} disconneted`)
-        });
-
-        document.getElementById('lockButton').addEventListener("click", function() {
-            if (is_locked) {
-                socket.emit('unlock', { roomId: roomId });
-            } else {
-                socket.emit('lock', { roomId: roomId });
+            removeMember(data.userId);
+            pendingNotification.push(`${data.name} disconneted`)
+            if (pendingNotification.length === 1) {
+                showNotification();
             }
-
-        });
-
-        document.getElementById('joinButton').addEventListener("click", async function() {
-            sendRequest('is_locked', { roomId: roomId, clientId: clientId })
-            socket.on('admit', () => {
-                join()
-            })
-            socket.on('cancel', () => {
-
-            })
-
-
-        });
-
-        document.getElementById('leave_meeting').addEventListener("click", function() {
-            socket.emit("disconnect");
-            window.location.replace(`http://localhost:3030/meeting/${roomId}`);
-
         });
 
         socket.on('confirm', (data) => {
@@ -112,13 +81,19 @@ function connectSocket() {
         socket.on('locked', function() {
             is_locked = true;
             setLockButton();
-            showToast('locked', "Meeting is locked");
+            pendingNotification.push("Meeting is locked");
+            if (pendingNotification.length === 1) {
+                showNotification();
+            }
         })
 
         socket.on('unlocked', function() {
             is_locked = false;
-            setUnlockButton()
-            showToast('locked', "Meeting is unlocked")
+            setUnlockButton();
+            pendingNotification.push("Meeting is unlocked");
+            if (pendingNotification.length === 1) {
+                showNotification();
+            }
         })
 
         socket.on('error', function(err) {
@@ -196,15 +171,6 @@ function connectSocket() {
     });
 }
 
-function recording() {
-    if (is_recording) {
-        socket.emit("stopRecording", { roomId: roomId, clientId: clientId });
-        is_recording = false;
-    } else {
-        socket.emit("startRecording", { roomId: roomId, clientId: clientId });
-        is_recording = true;
-    }
-}
 
 function disconnectSocket() {
     if (socket) {
@@ -263,25 +229,17 @@ function pauseVideo(element) {
 }
 
 function addRemoteTrack(id, track, kind) {
-
-    if (kind === 'video') {
-        video = addRemoteVideo(id);
-    }
-
     if (kind === 'audio') {
-        let video = findRemoteVideo(id);
-        video.srcObject.addTrack(track);
+        remoteVideos[id].addTrack(track);
         return;
     }
 
     const newStream = new MediaStream();
     newStream.addTrack(track);
-    playVideo(video, newStream)
-        .catch(err => { console.error('media ERROR:', err) });
+    remoteVideos[id] = newStream;
 }
 
 function addRemoteVideo(id) {
-
     let element = document.createElement('video');
     remoteContainer.appendChild(element);
     element.id = 'remote_' + id;
@@ -312,10 +270,57 @@ function removeAllRemoteVideo() {
         remoteContainer.removeChild(remoteContainer.firstChild);
     }
 }
+// Updates the select element with the provided set of cameras
+function updateCameraList(devices, selectors) {
+    const listElement = document.querySelector(selectors);
+    listElement.innerHTML = '';
+    devices.map(camera => {
+        const cameraOption = document.createElement('option');
+        cameraOption.label = camera.label;
+        cameraOption.value = camera.deviceId;
+        return cameraOption;
+    }).forEach(cameraOption => {
+        listElement.add(cameraOption)
+
+    });
+}
+
+//Update the select audio list
+// Fetch an array of devices of a certain type
+async function getConnectedDevices() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices
+}
+
+// Get the initial set of cameras connected
+function updateDevices() {
+    getConnectedDevices().then(devices => {
+        let videos = devices.filter(device => device.kind === "videoinput");
+        let audioinput = devices.filter(device => device.kind === "audioinput");
+        let audiooutput = devices.filter(device => device.kind === "audiooutput");
+        updateCameraList(videos, 'select#videoDevices');
+        updateCameraList(audioinput, 'select#audioDevices');
+        updateCameraList(audiooutput, 'select#speakers');
+    })
+}
+updateDevices();
+
+// Listen for changes to media devices and update the list accordingly
+navigator.mediaDevices.addEventListener('devicechange', event => {
+    updateDevices()
+});
+
+async function getUserStream(option) {
+    return await navigator.mediaDevices.getUserMedia(option)
+        .catch(err => {
+            alert(err.message);
+        });
+}
 
 // ============ UI button ==========
+
 async function startMedia() {
-    if (localStream) {
+    if (localVideoStream && localAudioStream) {
         console.warn('WARN: local media ALREADY started');
         return;
     }
@@ -323,16 +328,10 @@ async function startMedia() {
         console.error(err);
         return;
     });
-    await navigator.mediaDevices.getUserMedia({ audio: { 'echoCancellation': true }, video: true })
-        .then((stream) => {
-            localStream = stream;
-            localVideo = addRemoteVideo('local')
-            localVideo.volume = 0;
-            playVideo(localVideo, localStream);
-        })
-        .catch(err => {
-            console.error('media ERROR:', err);
-        });
+    localVideoStream = await getUserStream({ video: true });
+    remoteVideos[socket.id] = localVideoStream;
+    remoteContainer.srcObject = localVideoStream;
+    localAudioStream = await getUserStream({ audio: true });
 }
 disableElement();
 startMedia();

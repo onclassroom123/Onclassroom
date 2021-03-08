@@ -4,7 +4,7 @@
     "description": "",
     "main": "server.js",
     "scripts": {
-        "start": "nodemon server.js",
+        "start": "nodemon server.js -o",
         "build-client": "browserify node_modules/mediasoup-client/lib/index.js -s MediasoupClient -o public/js/mediasoup-client.js"
     },
     "keywords": [],

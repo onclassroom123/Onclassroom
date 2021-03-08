@@ -1,11 +1,11 @@
 async function connect() {
-    if (!localStream) {
+    if (!localVideoStream) {
         console.warn('WARN: local media NOT READY');
         return;
     }
 
     if (socket) {
-        const data = await sendRequest('getRouterRtpCapabilities', { roomId: roomId });
+        const data = await sendRequest('getRouterRtpCapabilities', { roomId: roomId, name: myName });
         console.log('getRouterRtpCapabilities:', data);
         await loadDevice(data);
     } else {
@@ -85,13 +85,13 @@ async function publish() {
     return publishProducerTransport;
 }
 async function addLocalStream() {
-    const videoTrack = localStream.getVideoTracks()[0];
+    const videoTrack = localVideoStream.getVideoTracks()[0];
     if (videoTrack) {
         const trackParams = { track: videoTrack };
         videoProducer = await producerTransport.produce(trackParams);
     }
 
-    const audioTrack = localStream.getAudioTracks()[0];
+    const audioTrack = localAudioStream.getAudioTracks()[0];
     if (audioTrack) {
         const trackParams = { track: audioTrack };
         audioProducer = await producerTransport.produce(trackParams);
@@ -121,7 +121,7 @@ async function join() {
     fileProducer = await createDataProducer('file')
     await addLocalStream();
     enableElement();
-    showToast("welcome", "Your are connected")
+    showToast("Your are connected")
 }
 
 async function screenShare() {
@@ -218,10 +218,12 @@ async function consumeCurrentProducers(clientId) {
 }
 
 function disconnect() {
-    if (localStream) {
+    if (localVideoStream) {
         pauseVideo(localVideo);
-        stopLocalStream(localStream);
-        localStream = null;
+        stopLocalStream(localVideoStream);
+        localVideoStream = null;
+        stopLocalStream(localAudioStream);
+        localAudioStream = null;
     }
     if (videoProducer) {
         videoProducer.close(); // localStream will stop
@@ -353,6 +355,11 @@ async function consumeAdd(transport, remoteSocketId, prdId, trackKind) {
     consumer.on('trackended', () => {
         console.log('--consumer trackended. remoteId=' + consumer.remoteId);
     });
+    consumer.on('resume', () => {
+        console.log("resume me hai")
+        let videoId = document.querySelector("#videoId");
+        videoId.src = consumer.track;
+    });
     console.log('--end of consumeAdd');
 
     if (kind === 'video') {
@@ -473,12 +480,14 @@ function removeConsumer(id, kind) {
 function addMember(id, name) {
     participants = document.getElementById('all_participants')
     element = document.createElement('li');
-    element.id = '' + id;
-    element.innerHTML = `<span>${name}</span>`;
+    element.id = `${id}`;
+    element.innerHTML = `${name}`;
+    element.addEventListener('click', (e) => {
+        setVideo(e.target.id);
+    })
 
     participants.appendChild(element);
     members[id] = name;
-    console.log(name + " has joinned meeting");
 }
 
 function removeMember(id) {

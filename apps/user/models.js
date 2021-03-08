@@ -44,3 +44,26 @@ UsersSchema.methods.toAuthJSON = function() {
 };
 
 mongoose.model('Users', UsersSchema);
+//example models
+
+const nameSchema = new Schema({
+
+});
+
+//schema method
+nameSchema.methods.functionName = function(arguments) {
+
+}
+
+//pre middleware
+nameSchema.pre('save', function() {
+
+});
+
+//post midleware
+nameSchema.post('save', function() {
+
+})
+
+//create model
+mongoose.model('ModelName', nameSchema);

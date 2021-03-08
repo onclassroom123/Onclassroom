@@ -1,0 +1,18 @@
+<div class="row mt-3">
+    <% for (value in meeting){ %>
+        <div class="col-md-4 g-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Meeting Id: <span><%= meeting[value]._id %></span></h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Discription: <span><%= meeting[value].discription %></span></h6>
+                    <p class="card-text">Time <span><%= meeting[value].dateTime.toLocaleTimeString() %></span></p>
+                    <p class="card-text">Date <span><%= meeting[value].dateTime.toLocaleTimeString() %></span></p>
+                    <form action="/meeting/getpassword" method="post">
+                        <input type="text" class="form-control d-none" value="<%= meeting[value]._id %>" name="_id">
+                        <input type="submit" value="Join" class="btn btn-primary">
+                    </form>
+                </div>
+            </div>
+        </div>
+        <% } %>
+</div>

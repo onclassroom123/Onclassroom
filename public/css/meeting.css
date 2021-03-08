@@ -1,8 +1,12 @@
 /* FontAwesome for working BootSnippet :> */
 
 @import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css');
-#team {
+.team {
     background: #eee !important;
+}
+
+#team {
+    margin-top: 10%;
 }
 
 .btn-primary:hover,
